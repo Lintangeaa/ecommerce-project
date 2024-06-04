@@ -2,7 +2,7 @@
 <html>
 
 <head>
-    <title>Midtrans Payment</title>
+    <title>Top Up Saldo</title>
     @include('home.css')
     <script type="text/javascript" src="https://app.sandbox.midtrans.com/snap/snap.js"
         data-client-key="{{ env('MIDTRANS_CLIENT_KEY') }}"></script>
@@ -66,9 +66,9 @@
             <form id="payment-form" method="post" action="">
                 @csrf
                 <input type="hidden" name="snap_token" id="snap_token">
-                <label for="amount">Amount:</label>
+                <label for="amount">Total Top Up </label>
                 <input type="number" id="amount" name="amount" required>
-                <button id="pay-button">Pay!</button>
+                <button id="pay-button" class="btn btn-success">Bayar</button>
             </form>
             <script type="text/javascript">
                 document.getElementById('pay-button').onclick = function(event) {

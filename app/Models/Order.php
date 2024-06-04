@@ -14,8 +14,13 @@ class Order extends Model
         return $this->hasOne('App\Models\User', 'id', 'user_id');
     }
 
-    public function product()
+    public function products()
     {
-        return $this->hasOne('App\Models\Product', 'id', 'product_id');
+        return $this->belongsToMany(Product::class)->withPivot('quantity');
+    }
+
+    public function transaction()
+    {
+        return $this->belongsTo(Transaction::class);
     }
 }

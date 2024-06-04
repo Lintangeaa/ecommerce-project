@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TransactionController;
 use Illuminate\Support\Facades\Route;
@@ -26,6 +27,8 @@ Route::middleware('auth')->group(function () {
         return view('topup');
     });
     Route::post('/transactions/create', [TransactionController::class, 'createSnapToken']);
+    Route::post('/pay-order', [OrderController::class, 'payOrder'])->name('pay-order');
+    Route::get('/remove-cart/{product_id}', [HomeController::class, 'removeItem'])->name('remove.cart');
 });
 
 Route::post('/webhook/midtrans', [TransactionController::class, 'handleWebhook']);

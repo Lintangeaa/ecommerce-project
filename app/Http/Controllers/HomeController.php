@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Models\OrderProduct;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 use App\Models\Product;
 
@@ -21,9 +23,9 @@ class HomeController extends Controller
     {
         $user = User::where('usertype', 'user')->get()->count();
 
-        $product= Product::all()->count();
+        $product = Product::all()->count();
 
-        $order =Order::all()->count();
+        $order = Order::all()->count();
 
         $delivered = Order::where('status', 'Diterima')->get()->count();
 
@@ -34,15 +36,11 @@ class HomeController extends Controller
     {
         $product = Product::all();
 
-        if(Auth::id())
-        {
+        if (Auth::id()) {
             $user = Auth::user();
             $userid = $user->id;
             $count = Cart::where('user_id', $userid)->count();
-        }
-
-        else
-        {
+        } else {
             $count = '';
         }
 
@@ -53,15 +51,11 @@ class HomeController extends Controller
     {
         $product = Product::all();
 
-        if(Auth::id())
-        {
+        if (Auth::id()) {
             $user = Auth::user();
             $userid = $user->id;
             $count = Cart::where('user_id', $userid)->count();
-        }
-
-        else
-        {
+        } else {
             $count = '';
         }
 
@@ -72,15 +66,11 @@ class HomeController extends Controller
     {
         $data = Product::find($id);
 
-        if(Auth::id())
-        {
+        if (Auth::id()) {
             $user = Auth::user();
             $userid = $user->id;
             $count = Cart::where('user_id', $userid)->count();
-        }
-
-        else
-        {
+        } else {
             $count = '';
         }
 
@@ -91,103 +81,91 @@ class HomeController extends Controller
     public function add_cart($id)
     {
         $product_id = $id;
+        $user_id = Auth::id();
 
-        $user = Auth::user();
+        // Check if the product is already in the cart
 
-        $user_id = $user->id;
-
-        $data = new Cart;
-
-        $data->user_id = $user_id;
-
-        $data->product_id = $product_id;
-
-
-        $data->save();
+        $newCartItem = new Cart;
+        $newCartItem->user_id = $user_id;
+        $newCartItem->product_id = $product_id;
+        $newCartItem->save();
 
         toastr()->timeOut(10000)->closeButton()->addSuccess('Product Added to the Cart Successfully');
 
+
         return redirect()->back();
-
-
     }
 
     public function mycart()
     {
-        if(Auth::id())
-        {
+        if (Auth::id()) {
             $user = Auth::user();
-
             $userid = $user->id;
 
-            $count = Cart::where('user_id', $userid)->count();
+            // Ambil semua produk unik dalam keranjang dengan mengelompokkannya berdasarkan product_id
+            // $cart = Cart::where('user_id', $userid)
+            //     ->selectRaw('product_id, count(*) as quantity')
+            //     ->groupBy('product_id')
+            //     ->get();
 
-            $cart = Cart::where('user_id', $userid)->get();
+            $cart = DB::select("SELECT user_id , product_id , COUNT(product_id) as qty,  p.title, p.image, p.price, SUM(p.price) as total FROM carts JOIN products p on product_id = p.id  WHERE user_id = 1
+            GROUP BY product_id , p.price
+            ");
+
+            $hitung = DB::selectOne("SELECT COUNT(*)  as total FROM carts");
+
+            $count = $hitung->total;
         }
-    
-        return view('home.mycart', compact('count', 'cart'));
 
+        return view('home.mycart', compact('count', 'cart'));
     }
+
 
     public function confirm_order(Request $request)
     {
+        $name = $request->name;
+        $address = $request->address;
+        $phone = $request->phone;
+        $total_payment = $request->total_payment;
+        $userid = Auth::user()->id;
 
-            $name = $request->name;
+        $cart = Cart::where('user_id', $userid)->get();
+        $qty = DB::selectOne("SELECT COUNT(*) as jml FROM carts WHERE user_id = $userid");
 
-            $address = $request->address;
-
-            $phone = $request->phone;
-
-            $userid = Auth::user()->id;
-
-            $cart = Cart::where('user_id', $userid)->get();
-
+        // Create a new order
         $order = new Order;
+        $order->name = $name;
+        $order->rec_address = $address;
+        $order->phone = $phone;
+        $order->total_payment = $total_payment;
+        $order->user_id = $userid;
+        $order->save();
 
-        foreach ($cart as $carts)
-        {
-            $order = new Order;
-
-            $order->name = $name;
-
-            $order->rec_address = $address;
-
-            $order->phone = $phone;
-
-            $order->user_id = $userid;
-
-            $order->product_id = $carts->product_id;
-
-            $order->save();
-
+        // Save each product in the order
+        foreach ($cart as $cartItem) {
+            // Create a new OrderProduct entry
+            $orderProduct = new OrderProduct;
+            $orderProduct->order_id = $order->id;
+            $orderProduct->product_id = $cartItem->product_id;
+            $orderProduct->quantity = $qty->jml;
+            $orderProduct->save();
         }
 
-
-        $cart_remove = Cart::where('user_id', $userid)->get();
-
-        foreach($cart_remove as $remove)
-        {
-            $data = Cart::find($remove->id);
-
-            $data->delete();
-        }
+        Cart::where('user_id', $userid)->delete();
 
         toastr()->timeOut(10000)->closeButton()->addSuccess('Produk Berhasil di Pesan');
 
         return redirect()->back();
-
     }
+
 
     public function myorders()
     {
+        $user = Auth::user();
+        $orders = Order::with('products')->where('user_id', $user->id)->get();
+        $count = Cart::where('user_id', $user->id)->count();
 
-        $user = Auth::user()->id;
-
-        $count = Cart::where('user_id', $user)->get()->count();
-
-        $order = Order::where('user_id', $user)->get();
-
-        return view('home.order', compact('count', 'order'));
+        return view('home.order', compact('count', 'orders'));
     }
 
     public function delete_cart($id)
@@ -202,6 +180,15 @@ class HomeController extends Controller
         return redirect()->back();
 
     }
+
+    public function removeItem($product_id)
+    {
+        $user_id = Auth::id();
+        Cart::where('user_id', $user_id)->where('product_id', $product_id)->delete();
+
+        return redirect()->back()->with('success', 'Item removed from cart successfully');
+    }
+
 
 
 
