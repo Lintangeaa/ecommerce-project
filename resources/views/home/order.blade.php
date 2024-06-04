@@ -3,10 +3,11 @@
 
 <head>
     @include('home.css')
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@10"></script>
     <script type="text/javascript" src="https://app.sandbox.midtrans.com/snap/snap.js"
         data-client-key="{{ env('MIDTRANS_CLIENT_KEY') }}"></script>
-    <style>
-        <style type="text/css">.div_center {
+    <style type="text/css">
+        .div_center {
             display: flex;
             justify-content: center;
             align-items: center;
@@ -41,78 +42,166 @@
         <!-- end header section -->
 
         <div class="div_center">
-
             <table>
                 <tr>
                     <th>Nama Barang</th>
                     <th>Harga</th>
                     <th>Status Pengiriman</th>
-                    <th>Gambar</th>
                     <th>Pay Order</th>
                 </tr>
                 @foreach ($orders as $order)
                     <tr>
                         <td>{{ $order->name }}</td>
-                        <td>{{ $order->total_payment }}</td>
+                        <td>Rp. {{ number_format($order->total_payment, 2) }}</td>
                         <td>{{ $order->status }}</td>
-
                         <td>
-                            <form id="payment-form-{{ $order->id }}" method="POST" action="{{ route('pay-order') }}">
-                                @csrf
-                                <input type="hidden" name="order_id" value="{{ $order->id }}">
-                                <input type="hidden" name="amount" value="{{ $order->total_payment }}">
-                                <button type="button" class="btn btn-primary"
-                                    onclick="payWithSnap({{ $order->id }})">Pay Order</button>
-                            </form>
+                            @if ($order->status == 'Pengemasan')
+                                <button type="button" class="btn btn-danger cancel-button"
+                                    data-order-id="{{ $order->id }}"
+                                    data-amount="{{ $order->total_payment }}">Cancel</button>
+                            @elseif ($order->status == 'Menunggu Pembayaran')
+                                <button type="button" class="btn btn-success pay-button"
+                                    data-order-id="{{ $order->id }}"
+                                    data-amount="{{ $order->total_payment }}">Bayar</button>
+                            @else
+                            @endif
                         </td>
                     </tr>
                 @endforeach
             </table>
-
         </div>
 
         <!-- info section -->
         @include('home.footer')
     </div>
 
-    <!-- Midtrans Snap script -->
-    <script type="text/javascript" src="https://app.sandbox.midtrans.com/snap/snap.js"
-        data-client-key="{{ env('MIDTRANS_CLIENT_KEY') }}"></script>
-
     <script>
-        function payWithSnap(orderId) {
-            var formId = 'payment-form-' + orderId;
-            var form = document.getElementById(formId);
-            var formData = new FormData(form);
+        document.querySelectorAll('.pay-button').forEach(button => {
+            button.addEventListener('click', function() {
+                const orderId = this.getAttribute('data-order-id');
+                const amount = this.getAttribute('data-amount');
 
-            fetch(form.action, {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                    },
-                    body: formData
-                })
-                .then(response => response.json())
-                .then(data => {
-                    snap.pay(data.snap_token, {
-                        onSuccess: function(result) {
-                            // Redirect to a success page or handle success event
-                            console.log('Payment success:', result);
+                fetch('/pay-order', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
                         },
-                        onPending: function(result) {
-                            // Redirect to a pending page or handle pending event
-                            console.log('Payment pending:', result);
-                        },
-                        onError: function(result) {
-                            // Handle error event
-                            console.error('Payment error:', result);
-                        }
+                        body: JSON.stringify({
+                            order_id: orderId,
+                            amount: amount
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        snap.pay(data.snap_token, {
+                            onSuccess: function(result) {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Pembayaran Berhasil',
+                                    text: 'Pesanan Anda telah berhasil dibayar.',
+                                    confirmButtonText: 'OK'
+                                }).then(() => {
+                                    fetch('/webhook/orders', {
+                                            method: 'POST',
+                                            headers: {
+                                                'Content-Type': 'application/json',
+                                                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                                            },
+                                            body: JSON.stringify({
+                                                order_id: orderId,
+                                                status: 'Pengemasan'
+                                            })
+                                        })
+                                        .then(response => response.json())
+                                        .then(responseData => {
+                                            console.log(responseData);
+                                            window.location.href = '/myorders';
+                                        })
+                                        .catch(error => {
+                                            console.error('Error:', error);
+                                        });
+                                });
+                            },
+                            onPending: function(result) {
+                                // Handle pending payment
+                            },
+                            onError: function(result) {
+                                // Handle payment error
+                            }
+                        });
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
                     });
-                })
-                .catch(error => {
-                    console.error('Payment error:', error);
+            });
+        });
+        document.querySelectorAll('.cancel-button').forEach(button => {
+            button.addEventListener('click', function() {
+                const orderId = this.getAttribute('data-order-id');
+                const amount = this.getAttribute('data-amount');
+
+                Swal.fire({
+                    title: 'Konfirmasi Pembatalan',
+                    text: 'Apakah Anda yakin ingin membatalkan pesanan ini?',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Ya, Batalkan',
+                    cancelButtonText: 'Tidak, Kembali',
+                    reverseButtons: true
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        // Lakukan pembatalan pesanan di sini
+                        fetch('/webhook/midtrans', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                                },
+                                body: JSON.stringify({
+                                    amount: amount
+                                })
+                            })
+                            .then(response => response.json())
+                            .then(responseData => {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Pembatalan Berhasil',
+                                    text: 'Uang pembayaran masuk ke saldo anda',
+                                    confirmButtonText: 'OK',
+                                    timer: 5000
+                                }).then(() => {
+                                    fetch('/webhook/orders', {
+                                            method: 'POST',
+                                            headers: {
+                                                'Content-Type': 'application/json',
+                                                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                                            },
+                                            body: JSON.stringify({
+                                                order_id: orderId,
+                                                status: 'Dibatalkan'
+                                            })
+                                        })
+                                        .then(response => response.json())
+                                        .then(responseData => {
+                                            console.log(responseData);
+
+                                            window.location.href = '/myorders';
+
+                                        })
+                                        .catch(error => {
+                                            console.error('Error:', error);
+                                        });
+
+                                });
+                            })
+                            .catch(error => {
+                                console.error('Error:', error);
+                            });
+                    }
                 });
-        }
+            });
+        });
     </script>
 </body>
 

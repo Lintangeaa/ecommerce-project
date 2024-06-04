@@ -47,4 +47,34 @@ class OrderController extends Controller
         return response()->json(['snap_token' => $snapToken]);
 
     }
+
+    public function handleOrder(Request $request)
+    {
+        // Mendapatkan user yang terautentikasi
+        $user = Auth::user();
+
+        if (!$user) {
+            return response()->json(['status' => 'unauthenticated'], 401);
+        }
+
+        $validatedData = $request->validate([
+            'order_id' => 'required|exists:orders,id',
+            'status' => 'required|string',
+        ]);
+
+        $order = Order::find($validatedData['order_id']);
+
+        // Check if the order belongs to the authenticated user
+        if (!$order || $order->user_id !== $user->id) {
+            return response()->json(['status' => 'error', 'message' => 'Order not found or unauthorized'], 404);
+        }
+
+        // Update the order status
+        $order->status = $validatedData['status'];
+        $order->save();
+
+        return response()->json(['status' => 'success']);
+    }
+
+
 }

@@ -29,6 +29,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/transactions/create', [TransactionController::class, 'createSnapToken']);
     Route::post('/pay-order', [OrderController::class, 'payOrder'])->name('pay-order');
     Route::get('/remove-cart/{product_id}', [HomeController::class, 'removeItem'])->name('remove.cart');
+    Route::post('/webhook/orders', [OrderController::class, 'handleOrder'])->name('webhook.orders');
+
 });
 
 Route::post('/webhook/midtrans', [TransactionController::class, 'handleWebhook']);
