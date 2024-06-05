@@ -42,6 +42,8 @@ Route::post('/webhook/midtrans', [TransactionController::class, 'handleWebhook']
 Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/admin/orders', [AdminOrderController::class, 'index'])->name('admin.orders.index');
     Route::get('/admin/orders/{id}', [AdminOrderController::class, 'show'])->name('admin.orders.show');
+
+    Route::post('/orders/change-status', [AdminOrderController::class, 'changeStatus'])->name('admin.orders.changeStatus');
 });
 
 require __DIR__ . '/auth.php';
