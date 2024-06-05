@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Order;
 use App\Models\Transaction;
+use App\Models\UserBalance;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Midtrans\Snap;
@@ -75,6 +76,28 @@ class OrderController extends Controller
 
         return response()->json(['status' => 'success']);
     }
+
+    public function payWithBalance(Request $request)
+    {
+        $user = Auth::user();
+        $userBalance = UserBalance::where('user_id', $user->id)->first();
+        $order = Order::find($request->order_id);
+
+        if ($userBalance && $userBalance->balance >= $order->total_payment) {
+            // Deduct balance
+            $userBalance->balance -= $order->total_payment;
+            $userBalance->save();
+
+            // Update order status
+            $order->status = 'Pengemasan';
+            $order->save();
+
+            return response()->json(['success' => true]);
+        } else {
+            return response()->json(['success' => false, 'message' => 'Saldo tidak mencukupi']);
+        }
+    }
+
 
 
 }

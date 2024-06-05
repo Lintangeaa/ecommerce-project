@@ -18,7 +18,7 @@ class AdminController extends Controller
     {
         $data = Category::all();
 
-        return view('admin.category',compact('data'));
+        return view('admin.category', compact('data'));
     }
 
     public function add_category(Request $request)
@@ -27,7 +27,7 @@ class AdminController extends Controller
         $category = new Category;
 
         $category->category_name = $request->category;
-        
+
         $category->save();
 
 
@@ -57,11 +57,11 @@ class AdminController extends Controller
 
     }
 
-    public function update_category(Request $request,$id)
+    public function update_category(Request $request, $id)
     {
         $data = Category::find($id);
 
-        $data->category_name= $request->category;
+        $data->category_name = $request->category;
 
         $data->save();
 
@@ -84,7 +84,7 @@ class AdminController extends Controller
         $data = new Product;
 
         $data->title = $request->title;
-        
+
         $data->description = $request->description;
 
         $data->price = $request->price;
@@ -95,12 +95,11 @@ class AdminController extends Controller
 
         $image = $request->image;
 
-        if($image)
-        {
-            
-            $imagename = time().'.'.$image->getClientOriginalExtension();
+        if ($image) {
 
-            $request->image->move('products',$imagename);
+            $imagename = time() . '.' . $image->getClientOriginalExtension();
+
+            $request->image->move('products', $imagename);
 
             $data->image = $imagename;
 
@@ -113,7 +112,7 @@ class AdminController extends Controller
 
         return redirect()->back();
     }
-    
+
     public function view_product()
     {
         $product = Product::paginate(3);
@@ -124,17 +123,16 @@ class AdminController extends Controller
     {
         $data = Product::find($id);
 
-        $image_path = public_path('products/'.$data->image);
+        $image_path = public_path('products/' . $data->image);
 
-        if(file_exists($image_path))
-        {
+        if (file_exists($image_path)) {
 
             unlink($image_path);
 
         }
 
         $data->delete();
-        
+
         toastr()->timeOut(10000)->closeButton()->addSuccess('Product Deleted Successfully');
 
         return redirect()->back();
@@ -149,61 +147,52 @@ class AdminController extends Controller
         return view('admin.update_page', compact('data', 'category'));
     }
 
-    public function edit_product(Request $request,$id)
+    public function edit_product(Request $request, $id)
     {
         $data = Product::find($id);
 
         $data->title = $request->title;
 
         $data->description = $request->description;
-        
+
         $data->price = $request->price;
-        
+
         $data->quantity = $request->quantity;
 
         $data->category = $request->category;
 
         $image = $request->image;
 
-        if($image)
-        {
+        if ($image) {
 
-            $imagename = time().'.'.$image->getClientOriginalExtension();
+            $imagename = time() . '.' . $image->getClientOriginalExtension();
 
-            $request->image->move('products',$imagename);
+            $request->image->move('products', $imagename);
 
             $data->image = $imagename;
         }
-        
-        
+
+
 
         $data->save();
 
         toastr()->timeOut(10000)->closeButton()->addSuccess('Product Updated Successfully');
 
         return redirect('/view_product');
-        
+
     }
 
     public function product_search(Request $request)
     {
 
-        $search  = $request->search;
+        $search = $request->search;
 
-        $product = Product::where('title', 'LIKE', '%'.$search.'%')->orWhere('category', 'LIKE', '%'.$search.'%')->paginate(3);
+        $product = Product::where('title', 'LIKE', '%' . $search . '%')->orWhere('category', 'LIKE', '%' . $search . '%')->paginate(3);
 
         return view('admin.view_product', compact('product'));
     }
 
-    public function view_order()
-    {
-
-        $data = Order::all();
-
-        return view('admin.order', compact('data'));
-    }
-
-    public  function on_the_way($id)
+    public function on_the_way($id)
     {
         $data = Order::find($id);
 
@@ -214,7 +203,7 @@ class AdminController extends Controller
         return redirect('/view_orders');
     }
 
-    public  function delivered($id)
+    public function delivered($id)
     {
         $data = Order::find($id);
 

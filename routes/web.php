@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AdminOrderController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TransactionController;
@@ -28,12 +29,20 @@ Route::middleware('auth')->group(function () {
     });
     Route::post('/transactions/create', [TransactionController::class, 'createSnapToken']);
     Route::post('/pay-order', [OrderController::class, 'payOrder'])->name('pay-order');
+    Route::post('/pay-with-balance', [OrderController::class, 'payWithBalance'])->name('pay.balance');
+
     Route::get('/remove-cart/{product_id}', [HomeController::class, 'removeItem'])->name('remove.cart');
     Route::post('/webhook/orders', [OrderController::class, 'handleOrder'])->name('webhook.orders');
-
+    Route::get('add_cart/{id}', [HomeController::class, 'add_cart'])->name('add.cart');
+    Route::get('min_cart/{id}', [HomeController::class, 'min_cart'])->name('min.cart');
 });
 
 Route::post('/webhook/midtrans', [TransactionController::class, 'handleWebhook']);
+
+Route::middleware(['auth', 'admin'])->group(function () {
+    Route::get('/admin/orders', [AdminOrderController::class, 'index'])->name('admin.orders.index');
+    Route::get('/admin/orders/{id}', [AdminOrderController::class, 'show'])->name('admin.orders.show');
+});
 
 require __DIR__ . '/auth.php';
 
@@ -66,15 +75,11 @@ route::get('product_search', [AdminController::class, 'product_search'])->middle
 
 route::get('product_details/{id}', [HomeController::class, 'product_details']);
 
-route::get('add_cart/{id}', [HomeController::class, 'add_cart'])->middleware(['auth', 'verified']);
-
 route::get('mycart', [HomeController::class, 'mycart'])->middleware(['auth', 'verified']);
 
 route::get('delete_cart/{id}', [HomeController::class, 'delete_cart'])->middleware(['auth', 'verified']);
 
 route::post('confirm_order', [HomeController::class, 'confirm_order'])->middleware(['auth', 'verified']);
-
-route::get('view_orders', [AdminController::class, 'view_order'])->middleware(['auth', 'admin']);
 
 route::get('on_the_way/{id}', [AdminController::class, 'on_the_way'])->middleware(['auth', 'admin']);
 

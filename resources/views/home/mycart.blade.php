@@ -50,12 +50,29 @@
         .div_gap {
             padding: 20px;
         }
+
+        .quantity-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .quantity-controls button {
+            margin: 0 5px;
+            padding: 5px 10px;
+            font-size: 16px;
+        }
+
+        .quantity-controls input {
+            width: 50px;
+            text-align: center;
+        }
     </style>
 </head>
 
 <body>
     <div class="hero_area">
-        <!-- header section strats -->
+        <!-- header section starts -->
         @include('home.header')
         <!-- end header section -->
     </div>
@@ -91,27 +108,29 @@
 
             <table>
                 <tr>
+                    <th>No</th>
                     <th>Nama Produk</th>
                     <th>Harga</th>
                     <th>Gambar</th>
-                    <th>Quantity</th>
                     <th>Total</th>
-                    <th>Remove</th>
+                    <th>Quantity</th>
                 </tr>
-
+                @php $no = 1; @endphp
                 @foreach ($cart as $item)
-                    <tr>
-                        <td>{{ $item->title }}</td>
-                        <td>Rp. {{ $item->price }}</td>
+                    <tr data-product-id="{{ $item->product_id }}">
+                        <td>{{ $no++ }}</td>
+                        <td>{{ $item->product->title }}</td>
+                        <td>Rp. {{ number_format($item->product->price, 2) }}</td>
                         <td>
-                            <img width="150" src="/products/{{ $item->image }}">
+                            <img width="150" src="/products/{{ $item->product->image }}">
                         </td>
-                        <td>{{ $item->qty }}</td>
-                        <td class="item-total">Rp. {{ $item->total }}</td>
-
-                        <td>
-                            <a class="btn btn-danger" onclick="confirmation(event)"
-                                href="{{ route('remove.cart', $item->product_id) }}">Cancel</a>
+                        <td class="item-total">Rp. {{ number_format($item->total, 2) }}</td>
+                        <td class="quantity-controls">
+                            <a class="btn btn-primary" style="color:white"
+                                href="{{ url('min_cart', $item->product->id) }}">-</a>
+                            <input type="text" class="quantity-input" value="{{ $item->qty }}" readonly>
+                            <a class="btn btn-primary" style="color:white"
+                                href="{{ url('add_cart', $item->product->id) }}">+</a>
                         </td>
                     </tr>
                 @endforeach
@@ -150,7 +169,7 @@
         function calculateTotal() {
             let total = 0;
             document.querySelectorAll('.item-total').forEach(function(element) {
-                const itemTotal = parseFloat(element.textContent.replace('Rp. ', '').replace(',', ''));
+                const itemTotal = parseFloat(element.textContent.replace('Rp. ', '').replace(/,/g, ''));
                 total += itemTotal;
             });
             document.getElementById('total_value').textContent = total.toFixed(2);

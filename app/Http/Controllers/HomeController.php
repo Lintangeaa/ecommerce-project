@@ -7,6 +7,7 @@ use App\Models\OrderProduct;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
+
 use App\Models\Product;
 
 use App\Models\User;
@@ -84,17 +85,69 @@ class HomeController extends Controller
         $user_id = Auth::id();
 
         // Check if the product is already in the cart
+        $product = Product::find($product_id);
+        if ($product->quantity > 0) {
+            $product->quantity -= 1;
+            $product->save();
 
-        $newCartItem = new Cart;
-        $newCartItem->user_id = $user_id;
-        $newCartItem->product_id = $product_id;
-        $newCartItem->save();
+            // Check if the cart item already exists
+            $cartItem = Cart::where('user_id', $user_id)->where('product_id', $product_id)->first();
+            if ($cartItem) {
+                $cartItem->qty += 1;
+                $cartItem->total = $cartItem->qty * $product->price;
+                $cartItem->save();
+            } else {
+                $newCartItem = new Cart;
+                $newCartItem->user_id = $user_id;
+                $newCartItem->product_id = $product_id;
+                $newCartItem->qty += 1;
+                $newCartItem->total = $product->price;
+                $newCartItem->save();
+            }
 
-        toastr()->timeOut(10000)->closeButton()->addSuccess('Product Added to the Cart Successfully');
-
+            toastr()->timeOut(10000)->closeButton()->addSuccess('Product Added to the Cart Successfully');
+        } else {
+            toastr()->timeOut(10000)->closeButton()->addError('Product is out of stock');
+        }
 
         return redirect()->back();
     }
+
+
+    public function min_cart($id)
+    {
+        $product_id = $id;
+        $user_id = Auth::id();
+
+        // Find the product
+        $product = Product::find($product_id);
+
+        // Find the cart item
+        $cartItem = Cart::where('user_id', $user_id)->where('product_id', $product_id)->first();
+
+        if ($cartItem) {
+            if ($cartItem->qty > 1) {
+                // Decrement quantity and update total
+                $cartItem->qty -= 1;
+                $cartItem->total = $cartItem->qty * $product->price;
+                $cartItem->save();
+            } else {
+                // Remove cart item if quantity is 1
+                $cartItem->delete();
+            }
+
+            // Increase product quantity
+            $product->quantity += 1;
+            $product->save();
+
+            toastr()->timeOut(10000)->closeButton()->addSuccess('Product quantity updated in the Cart Successfully');
+        } else {
+            toastr()->timeOut(10000)->closeButton()->addError('Product is not in the cart');
+        }
+
+        return redirect()->back();
+    }
+
 
     public function mycart()
     {
@@ -102,22 +155,19 @@ class HomeController extends Controller
             $user = Auth::user();
             $userid = $user->id;
 
-            // Ambil semua produk unik dalam keranjang dengan mengelompokkannya berdasarkan product_id
-            // $cart = Cart::where('user_id', $userid)
-            //     ->selectRaw('product_id, count(*) as quantity')
-            //     ->groupBy('product_id')
-            //     ->get();
+            $cart = Cart::with('product')
+                ->where('user_id', $userid)
+                ->select('product_id', DB::raw('SUM(qty) as qty'), DB::raw('SUM(total) as total'))
+                ->groupBy('product_id')
+                ->get();
 
-            $cart = DB::select("SELECT user_id , product_id , COUNT(product_id) as qty,  p.title, p.image, p.price, SUM(p.price) as total FROM carts JOIN products p on product_id = p.id  WHERE user_id = 1
-            GROUP BY product_id , p.price
-            ");
+            // Counting the total items in the cart
+            $count = Cart::where('user_id', $userid)->count();
 
-            $hitung = DB::selectOne("SELECT COUNT(*)  as total FROM carts");
-
-            $count = $hitung->total;
+            return view('home.mycart', compact('count', 'cart'));
         }
 
-        return view('home.mycart', compact('count', 'cart'));
+        return redirect()->route('login');
     }
 
 
@@ -162,7 +212,10 @@ class HomeController extends Controller
     public function myorders()
     {
         $user = Auth::user();
-        $orders = Order::with('products')->where('user_id', $user->id)->get();
+        $orders = Order::with('orderProducts')
+            ->where('user_id', $user->id)
+            ->orderBy('created_at', 'desc')
+            ->paginate(10);
         $count = Cart::where('user_id', $user->id)->count();
 
         return view('home.order', compact('count', 'orders'));
