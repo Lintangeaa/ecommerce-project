@@ -4,9 +4,13 @@
 <head>
     <title>Top Up Saldo</title>
     @include('home.css')
-    <script type="text/javascript" src="https://app.sandbox.midtrans.com/snap/snap.js"
+    {{-- <script type="text/javascript" src="https://app.sandbox.midtrans.com/snap/snap.js"
+        data-client-key="{{ env('MIDTRANS_CLIENT_KEY') }}"></script> --}}
+    <script type="text/javascript" src="https://app.midtrans.com/snap/snap.js"
         data-client-key="{{ env('MIDTRANS_CLIENT_KEY') }}"></script>
     <style>
+        <style>
+
         /* Styles for the modal */
         .modal {
             display: none;

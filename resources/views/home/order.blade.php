@@ -10,8 +10,12 @@ use Illuminate\Pagination\LengthAwarePaginator;
 <head>
     @include('home.css')
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@10"></script>
-    <script type="text/javascript" src="https://app.sandbox.midtrans.com/snap/snap.js"
+    {{-- <script type="text/javascript" src="https://app.sandbox.midtrans.com/snap/snap.js"
+        data-client-key="{{ env('MIDTRANS_CLIENT_KEY') }}"></script> --}}
+    <script type="text/javascript" src="https://app.midtrans.com/snap/snap.js"
         data-client-key="{{ env('MIDTRANS_CLIENT_KEY') }}"></script>
+
+
     <style type="text/css">
         .div_center {
             display: flex;
