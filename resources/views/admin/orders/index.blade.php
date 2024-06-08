@@ -112,6 +112,11 @@
                     <button type="submit">Cari</button>
                 </form>
 
+                <div class="export-buttons" style="text-align: center; margin-bottom: 20px;">
+                    <a href="{{ route('admin.orders.exportExcel') }}" class="btn btn-success">Export to Excel</a>
+                    <a href="{{ route('admin.orders.exportPDF') }}" class="btn btn-danger">Export to PDF</a>
+                </div>
+
                 <div class="table_center">
                     <table>
                         <tr>

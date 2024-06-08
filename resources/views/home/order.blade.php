@@ -73,7 +73,8 @@ use Illuminate\Pagination\LengthAwarePaginator;
                     <th>Nama Barang</th>
                     <th>Harga</th>
                     <th>Status Pesanan</th>
-                    <th>Pay Order</th>
+                    <th>Action</th>
+
                 </tr>
                 @foreach ($orders as $order)
                     <tr>
@@ -98,7 +99,10 @@ use Illuminate\Pagination\LengthAwarePaginator;
                                     data-amount="{{ $order->total_payment }}">Bayar</button>
                             @else
                             @endif
+                            <button type="button" class="btn btn-primary invoice-button"
+                                data-order-id="{{ $order->id }}">Invoice</button>
                         </td>
+
                     </tr>
                 @endforeach
             </table>
@@ -112,6 +116,14 @@ use Illuminate\Pagination\LengthAwarePaginator;
     </div>
 
     <script>
+        document.querySelectorAll('.invoice-button').forEach(button => {
+            button.addEventListener('click', function() {
+                const orderId = this.getAttribute('data-order-id');
+
+                window.location.href = '/invoice/' + orderId;
+            });
+        });
+
         document.querySelectorAll('.pay-button').forEach(button => {
             button.addEventListener('click', function() {
                 const orderId = this.getAttribute('data-order-id');

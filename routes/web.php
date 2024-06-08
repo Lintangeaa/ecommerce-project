@@ -30,11 +30,14 @@ Route::middleware('auth')->group(function () {
     Route::post('/transactions/create', [TransactionController::class, 'createSnapToken']);
     Route::post('/pay-order', [OrderController::class, 'payOrder'])->name('pay-order');
     Route::post('/pay-with-balance', [OrderController::class, 'payWithBalance'])->name('pay.balance');
+    Route::get('/invoice/{orderId}', [OrderController::class, 'generateInvoice'])->name('generate.invoice');
 
     Route::get('/remove-cart/{product_id}', [HomeController::class, 'removeItem'])->name('remove.cart');
     Route::post('/webhook/orders', [OrderController::class, 'handleOrder'])->name('webhook.orders');
     Route::get('add_cart/{id}', [HomeController::class, 'add_cart'])->name('add.cart');
     Route::get('min_cart/{id}', [HomeController::class, 'min_cart'])->name('min.cart');
+
+
 });
 
 Route::post('/webhook/midtrans', [TransactionController::class, 'handleWebhook']);
@@ -44,6 +47,9 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/admin/orders/{id}', [AdminOrderController::class, 'show'])->name('admin.orders.show');
 
     Route::post('/orders/change-status', [AdminOrderController::class, 'changeStatus'])->name('admin.orders.changeStatus');
+
+    Route::get('/admin/orders/export/excel', [OrderController::class, 'exportExcel'])->name('admin.orders.exportExcel');
+    Route::get('/admin/orders/export/pdf', [OrderController::class, 'exportPDF'])->name('admin.orders.exportPDF');
 });
 
 require __DIR__ . '/auth.php';

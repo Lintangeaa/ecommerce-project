@@ -2,12 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\OrdersExport;
 use App\Models\Order;
 use App\Models\Transaction;
 use App\Models\UserBalance;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Midtrans\Snap;
+use Dompdf\Dompdf;
+use Dompdf\Options;
+use Maatwebsite\Excel\Facades\Excel;
+
 
 class OrderController extends Controller
 {
@@ -98,6 +103,58 @@ class OrderController extends Controller
         }
     }
 
+    public function generateInvoice($orderId)
+    {
+        // Mengambil detail pesanan
+        $order = Order::findOrFail($orderId);
 
+        // Menggunakan Dompdf untuk membuat PDF
+        $options = new Options();
+        $options->set('isHtml5ParserEnabled', true);
+        $options->set('isPhpEnabled', true);
+        $dompdf = new Dompdf($options);
+        $html = view('exports/invoice', compact('order'))->render();
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+
+        // Menghasilkan nama file PDF
+        $filename = 'invoice_' . $orderId . '.pdf';
+
+        // Mengirimkan file PDF ke browser
+        return $dompdf->stream($filename);
+    }
+
+    public function exportExcel(Request $request)
+    {
+        $orders = Order::with('user', 'orderProducts.product')->get();
+        return Excel::download(new OrdersExport($orders), 'orders.xlsx');
+    }
+
+    public function exportPDF(Request $request)
+    {
+        $orders = Order::with('user', 'orderProducts.product')->get();
+        $pdf = $this->generatePDF($orders);
+        return response()->streamDownload(
+            fn() => print ($pdf),
+            'orders.pdf',
+            ['Content-Type' => 'application/pdf']
+        );
+    }
+
+    protected function generatePDF($orders)
+    {
+        $options = new Options();
+        $options->set('isHtml5ParserEnabled', true);
+        $options->set('isRemoteEnabled', true);
+
+        $dompdf = new Dompdf($options);
+        $html = view('/exports/admin/order', compact('orders'))->render();
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+
+        return $dompdf->output();
+    }
 
 }
