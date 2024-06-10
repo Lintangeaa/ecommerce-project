@@ -23,6 +23,8 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     Route::get('/balance', [BalanceController::class, 'showBalance'])->middleware(['auth', 'verified'])->name('balance');
     Route::post('/balance/topup', [BalanceController::class, 'topUp'])->name('balance.topup');
+    Route::post('/withdraw', [BalanceController::class, 'withdraw'])->name('balance.withdraw');
+
 
     Route::get('/transactions/create', function () {
         return view('topup');

@@ -6,11 +6,10 @@
     @include('home.css')
     {{-- <script type="text/javascript" src="https://app.sandbox.midtrans.com/snap/snap.js"
         data-client-key="{{ env('MIDTRANS_CLIENT_KEY') }}"></script> --}}
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script type="text/javascript" src="https://app.midtrans.com/snap/snap.js"
         data-client-key="{{ env('MIDTRANS_CLIENT_KEY') }}"></script>
     <style>
-        <style>
-
         /* Styles for the modal */
         .modal {
             display: none;
@@ -33,6 +32,7 @@
             max-width: 600px;
         }
     </style>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 </head>
 
 <body>
@@ -55,6 +55,7 @@
                         <p><strong>Rp {{ number_format($balance, 0, ',', '.') }}</strong></p>
                         <!-- Button to open the modal -->
                         <button id="openModalButton" class="btn btn-primary">Top Up</button>
+                        <button id="openWithdrawModalButton" class="btn btn-danger">Withdraw</button>
                     </div>
                 </div>
             </div>
@@ -132,26 +133,90 @@
         </div>
     </div>
 
+    <div id="withdrawModal" class="modal">
+        <div class="modal-content">
+            <form id="withdraw-form" method="post" action="{{ route('balance.withdraw') }}">
+                @csrf
+                <label for="withdrawAmount">Nominal Withdraw</label>
+                <input type="number" id="withdrawAmount" name="withdrawAmount" required>
+                <button id="withdraw-button" class="btn btn-success">Ajukan Withdraw</button>
+            </form>
+        </div>
+    </div>
+
+
     <script>
         // Function to open the modal
         document.getElementById("openModalButton").addEventListener("click", function(event) {
             event.preventDefault();
-            openModal();
+            openModal('midtransModal');
+        });
+
+        document.getElementById("openWithdrawModalButton").addEventListener("click", function(event) {
+            event.preventDefault();
+            openModal('withdrawModal');
         });
 
         // Function to open the modal
-        function openModal() {
-            var modal = document.getElementById("midtransModal");
+        function openModal(modalId) {
+            var modal = document.getElementById(modalId);
             modal.style.display = "block";
         }
 
         // Function to close the modal
         window.onclick = function(event) {
-            var modal = document.getElementById("midtransModal");
-            if (event.target == modal) {
-                modal.style.display = "none";
+            var modalMidtrans = document.getElementById("midtransModal");
+            var modalWithdraw = document.getElementById("withdrawModal");
+            if (event.target == modalMidtrans) {
+                modalMidtrans.style.display = "none";
+            }
+            if (event.target == modalWithdraw) {
+                modalWithdraw.style.display = "none";
             }
         };
+
+        document.getElementById('withdraw-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const withdrawAmount = document.getElementById('withdrawAmount').value;
+
+            fetch('{{ route('balance.withdraw') }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify({
+                        withdrawAmount: withdrawAmount
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data)
+                    if (data.status === 'success') {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Success',
+                            text: data.message
+                        }).then(() => {
+                            window.location.href = '/balance';
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'Terjadi kesalahan, silakan coba lagi.'
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Terjadi kesalahan, silakan coba lagi.'
+                    });
+                });
+        });
     </script>
 </body>
 

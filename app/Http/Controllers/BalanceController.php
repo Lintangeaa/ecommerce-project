@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Cart;
 use App\Models\Order;
+use App\Models\Transaction;
 use Illuminate\Http\Request;
 use App\Models\UserBalance;
 use Auth;
@@ -41,5 +42,25 @@ class BalanceController extends Controller
         $user = Auth::user();
 
 
+    }
+
+    public function withdraw(Request $request)
+    {
+        $request->validate([
+            'withdrawAmount' => 'required|numeric|min:1000',
+        ]);
+
+        $withdrawAmount = $request->withdrawAmount;
+
+        // Buat permintaan penarikan saldo
+        $withdrawRequest = Transaction::create([
+            'user_id' => Auth::id(),
+            'amount' => -$withdrawAmount,
+            'status' => 'pending',
+        ]);
+
+        // Logic untuk menunggu konfirmasi admin bisa ditambahkan di sini
+
+        return response()->json(['status' => 'success', 'message' => 'Permintaan withdraw berhasil diajukan, menunggu konfirmasi admin.']);
     }
 }

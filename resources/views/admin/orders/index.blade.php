@@ -158,30 +158,27 @@
                                         href="{{ route('admin.orders.show', $order->id) }}">Detail</a>
                                 </td>
                                 <td>
-                                    @if ($order->status == 'Pengemasan')
-                                        <form action="{{ route('admin.orders.changeStatus') }}" method="POST">
-                                            @csrf
-                                            <input type="hidden" name="order_id" value="{{ $order->id }}">
-                                            <select name="status" onchange="this.form.submit()">
-                                                <option value="Pengemasan"
-                                                    {{ $order->status == 'Pengemasan' ? 'selected' : '' }}>Pengemasan
-                                                </option>
-                                                <option value="Menunggu Pembayaran"
-                                                    {{ $order->status == 'Menunggu Pembayaran' ? 'selected' : '' }}>
-                                                    Menunggu Pembayaran</option>
-                                                <option value="Dibatalkan"
-                                                    {{ $order->status == 'Dibatalkan' ? 'selected' : '' }}>Dibatalkan
-                                                </option>
-                                                <option value="Dikirimkan"
-                                                    {{ $order->status == 'Dikirimkan' ? 'selected' : '' }}>Dikirimkan
-                                                </option>
-                                                <option value="Diterima"
-                                                    {{ $order->status == 'Diterima' ? 'selected' : '' }}>Diterima
-                                                </option>
-                                            </select>
-                                        </form>
-                                    @endif
-
+                                    <form action="{{ route('admin.orders.changeStatus') }}" method="POST">
+                                        @csrf
+                                        <input type="hidden" name="order_id" value="{{ $order->id }}">
+                                        <select name="status" onchange="this.form.submit()">
+                                            <option value="Pengemasan"
+                                                {{ $order->status == 'Pengemasan' ? 'selected' : '' }}>Pengemasan
+                                            </option>
+                                            <option value="Menunggu Pembayaran"
+                                                {{ $order->status == 'Menunggu Pembayaran' ? 'selected' : '' }}>
+                                                Menunggu Pembayaran</option>
+                                            <option value="Dibatalkan"
+                                                {{ $order->status == 'Dibatalkan' ? 'selected' : '' }}>Dibatalkan
+                                            </option>
+                                            <option value="Dikirimkan"
+                                                {{ $order->status == 'Dikirimkan' ? 'selected' : '' }}>Dikirimkan
+                                            </option>
+                                            <option value="Diterima"
+                                                {{ $order->status == 'Diterima' ? 'selected' : '' }}>Diterima
+                                            </option>
+                                        </select>
+                                    </form>
                                 </td>
                             </tr>
                         @endforeach
